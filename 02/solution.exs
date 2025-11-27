@@ -9,41 +9,52 @@ instructions =
   |> Stream.map(fn {val, idx} -> {idx, val} end)
   |> Map.new()
 
-Map.keys(instructions)
-|> Enum.sort()
-|> Enum.reduce_while(
-  {instructions, 0},
-  fn _, {current_map, index} ->
-    IO.inspect(index)
-    IO.inspect(current_map)
-    val = Map.get(current_map, index)
+program = fn val_1, val_2, instructions ->
+  instructions = Map.put(instructions, 1, val_1)
+  instructions = Map.put(instructions, 2, val_2)
 
-    case val do
-      # Opcode 1 adds together numbers read from two positions and stores the result in a third position
-      1 ->
-        loc_a = Map.get(current_map, index + 1)
-        loc_b = Map.get(current_map, index + 2)
-        val_a = Map.get(current_map, loc_a)
-        val_b = Map.get(current_map, loc_b)
-        loc = Map.get(current_map, index + 3)
-        {:cont, {Map.put(current_map, loc, val_a + val_b), index + 4}}
+  Map.keys(instructions)
+  |> Enum.sort()
+  |> Enum.reduce_while(
+    {instructions, 0},
+    fn _, {current_map, index} ->
+      val = Map.get(current_map, index)
 
-      # Opcode 2 works exactly like opcode 1, except it multiplies the two inputs instead of adding them.
-      2 ->
-        loc_a = Map.get(current_map, index + 1)
-        loc_b = Map.get(current_map, index + 2)
-        val_a = Map.get(current_map, loc_a)
-        val_b = Map.get(current_map, loc_b)
-        loc = Map.get(current_map, index + 3)
-        {:cont, {Map.put(current_map, loc, val_a * val_b), index + 4}}
+      case val do
+        # Opcode 1 adds together numbers read from two positions and stores the result in a third position
+        1 ->
+          loc_a = Map.get(current_map, index + 1)
+          loc_b = Map.get(current_map, index + 2)
+          val_a = Map.get(current_map, loc_a)
+          val_b = Map.get(current_map, loc_b)
+          loc = Map.get(current_map, index + 3)
+          {:cont, {Map.put(current_map, loc, val_a + val_b), index + 4}}
 
-      # 99 means that the program is finished and should immediately halt
-      99 ->
-        IO.puts("Halting...Value at pos 0: #{Map.get(current_map, 0)}")
-        {:halt, {current_map, index}}
+        # Opcode 2 works exactly like opcode 1, except it multiplies the two inputs instead of adding them.
+        2 ->
+          loc_a = Map.get(current_map, index + 1)
+          loc_b = Map.get(current_map, index + 2)
+          val_a = Map.get(current_map, loc_a)
+          val_b = Map.get(current_map, loc_b)
+          loc = Map.get(current_map, index + 3)
+          {:cont, {Map.put(current_map, loc, val_a * val_b), index + 4}}
 
-      _ ->
-        {:cont, {current_map, index}}
+        # 99 means that the program is finished and should immediately halt
+        99 ->
+          res = Map.get(current_map, 0)
+
+          # part 2
+          if res == 19_690_720 do
+            IO.puts("Desired calculation: #{100 * val_1 + val_2}")
+          end
+
+          {:halt, {current_map, index}}
+
+        _ ->
+          {:cont, {current_map, index}}
+      end
     end
-  end
-)
+  )
+end
+
+Enum.each(0..99, fn a -> Enum.each(0..99, fn b -> program.(a, b, instructions) end) end)
